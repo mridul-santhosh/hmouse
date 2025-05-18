@@ -1,0 +1,169 @@
+import cv2
+import mediapipe as mp
+import numpy as np
+mp_drawing = mp.solutions.drawing_utils
+mp_drawing_styles = mp.solutions.drawing_styles
+mp_face_mesh = mp.solutions.face_mesh
+
+def getCoordinates_ms(idx, landmark, img_h, img_w, upper_loc, upper_x, lower_loc, lower_x):
+    x, y = landmark.x, landmark.y
+    x_on_image = int(x*img_w)
+    y_on_image = int(y*img_h)
+    
+    upper_lip_index = 0
+    lower_lip_index = 14
+    if idx == upper_lip_index:
+        upper_loc = y_on_image
+        upper_x = x_on_image
+    elif idx == lower_lip_index:
+        lower_loc = y_on_image
+        lower_x = x_on_image
+    return upper_loc, upper_x, lower_loc, lower_x
+
+def getMouthState_ms(upper_lip_loc, lower_lip_loc):
+    distance = int(lower_lip_loc - upper_lip_loc)
+    if distance > 20:
+        mouthStatus = 'opened'
+    else:
+        mouthStatus = 'closed'
+    return mouthStatus, distance
+
+def getCoordinates_es(idx, landmark, img_h, img_w, r_upper_loc, r_upper_x, r_lower_loc, r_lower_x, l_upper_loc, l_upper_x, l_lower_loc, l_lower_x):
+    x, y = landmark.x, landmark.y
+    x_on_image = int(x*img_w)
+    y_on_image = int(y*img_h)
+    
+    r_upper_eyes_index = 159
+    r_lower_eyes_index = 145
+    l_upper_eyes_index = 386
+    l_lower_eyes_index = 374
+
+    if idx == r_upper_eyes_index:
+        r_upper_loc = y_on_image
+        r_upper_x = x_on_image
+    elif idx == r_lower_eyes_index:
+        r_lower_loc = y_on_image
+        r_lower_x = x_on_image
+    elif idx == l_upper_eyes_index:
+        l_upper_loc = y_on_image
+        l_upper_x = x_on_image
+    elif idx == l_lower_eyes_index:
+        l_lower_loc = y_on_image
+        l_lower_x = x_on_image
+        
+    return r_upper_loc, r_upper_x, r_lower_loc, r_lower_x, l_upper_loc, l_upper_x, l_lower_loc, l_lower_x
+
+def getEyesState_es(r_upper_loc, r_lower_loc, l_upper_loc, l_lower_loc):
+    r_distance = int(r_lower_loc - r_upper_loc)
+    l_distance = int(l_lower_loc - l_upper_loc)
+    # Mirror POV right -> left and left -> right
+    if r_distance > 6:
+        r_eyesStatus = 'opened'
+    else:
+        r_eyesStatus = 'closed'
+    if l_distance > 6:
+        l_eyesStatus = 'opened'
+    else:
+        l_eyesStatus = 'closed'
+    return r_eyesStatus, r_distance, l_eyesStatus, l_distance
+
+def draw_eyes_eyes_dots_es(image, x, y):
+    cv2.circle(img=image, center=(x, y), radius = 3, color=(0,255,0))
+
+def draw_eyes_state_es(image, r_text, l_text):
+    cv2.putText(image, f"EYES: {r_text}) | {l_text})", (20, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
+
+def draw_eyes_condition_es(image, r_upper_eye_loc, r_lower_eye_loc, r_distance, l_upper_eye_loc, l_lower_eye_loc, l_distance):
+    cv2.putText(image, f"(R) upper/lower: {r_upper_eye_loc}/{r_lower_eye_loc} - distance: {r_distance}", (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+    cv2.putText(image, f"(L) upper/lower: {l_upper_eye_loc}/{l_lower_eye_loc} - distance: {l_distance}", (20, 75), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+
+def projectCameraAngle_fp(face_2d, face_3d, img_h, img_w):
+    # The camera matrix
+    focal_length = 1 * img_w
+    cam_matrix = np.array([ [focal_length, 0, img_h / 2],
+                            [0, focal_length, img_w / 2],
+                            [0, 0, 1]])
+    # The distortion parameters
+    dist_matrix = np.zeros((4, 1), dtype=np.float64)
+    # Solve PnP
+    success, rot_vec, trans_vec = cv2.solvePnP(face_3d, face_2d, cam_matrix, dist_matrix)
+    # Get rotational matrix
+    rmat, jac = cv2.Rodrigues(rot_vec)
+    # Get angles
+    angles, mtxR, mtxQ, Qx, Qy, Qz = cv2.RQDecomp3x3(rmat)
+    # Get the y rotation degree
+    x = angles[0] * 360
+    y = angles[1] * 360
+    z = angles[2] * 360
+    return x, y, z, rot_vec, trans_vec, cam_matrix, dist_matrix
+
+def getHeadTilt_fp(x, y, z):
+    # if y < -20:
+    #     tiltPose = "Left"
+    # elif y > 15:
+    #     tiltPose = "Right"
+    # elif x < -15:
+    #     tiltPose = "Down"
+    # elif x > 20:
+    #     tiltPose = "Up"
+    # else:
+    #     tiltPose = "Forward"
+    return -y,-x,z
+
+def pipelineOptimized(image, face_landmarks):
+    # Get image shape
+    face_3d = []
+    face_2d = []
+    img_h, img_w, img_c = image.shape
+    landmark_points = face_landmarks.landmark
+    # Right
+    r_upper_loc = 0
+    r_upper_x = 0
+    r_lower_loc = 0
+    r_lower_x = 0
+    # Left
+    l_upper_loc = 0
+    l_upper_x = 0
+    l_lower_loc = 0
+    l_lower_x = 0
+
+    upper_lip_loc = 0
+    upper_x = 0
+    lower_lip_loc = 0
+    lower_x = 0
+
+    for idx, landmark in enumerate(landmark_points):
+        # Get eyes location coordinate
+        r_upper_loc, r_upper_x, r_lower_loc, r_lower_x, l_upper_loc, l_upper_x, l_lower_loc, l_lower_x = getCoordinates_es(
+            idx, landmark, img_h, img_w, 
+            r_upper_loc, r_upper_x, 
+            r_lower_loc, r_lower_x,
+            l_upper_loc, l_upper_x, 
+            l_lower_loc, l_lower_x)
+    # Get eyes state
+        if idx == 33 or idx == 263 or idx == 1 or idx == 61 or idx == 291 or idx == 199:
+            # if idx == 1:
+                # nose_2d = (landmark.x * img_w, landmark.y * img_h)
+                # nose_3d = (landmark.x * img_w, landmark.y * img_h, landmark.z * 3000)
+            x, y = int(landmark.x * img_w), int(landmark.y * img_h)
+            face_2d.append([x, y])
+            face_3d.append([x, y, landmark.z])
+        upper_lip_loc, upper_x, lower_lip_loc, lower_x = getCoordinates_ms(idx, landmark, img_h, img_w, upper_lip_loc, upper_x, lower_lip_loc, lower_x)
+
+    # Convert it to the NumPy array
+    face_2d = np.array(face_2d, dtype=np.float64)
+    # Convert it to the NumPy array
+    face_3d = np.array(face_3d, dtype=np.float64)
+    r_eyes_state, r_distance, l_eyes_state, l_distance = getEyesState_es(r_upper_loc, r_lower_loc, l_upper_loc, l_lower_loc)
+    x, y, z, rot_vec, trans_vec, cam_matrix, dist_matrix = projectCameraAngle_fp(face_2d, face_3d, img_h, img_w)
+    mouthState, distance = getMouthState_ms(upper_lip_loc, lower_lip_loc)
+    # Draw eyes state (Optional)
+    # draw_eyes_state_es(image, r_eyes_state, l_eyes_state)
+    # draw_eyes_condition_es(image, r_upper_loc, r_lower_loc, r_distance, l_upper_loc, l_lower_loc, l_distance)
+    # draw_eyes_eyes_dots_es(image, r_upper_x, r_upper_loc)
+    # draw_eyes_eyes_dots_es(image, r_lower_x, r_lower_loc)
+    # draw_eyes_eyes_dots_es(image, l_upper_x, l_upper_loc)
+    # draw_eyes_eyes_dots_es(image, l_lower_x, l_lower_loc)
+    x,y,z = getHeadTilt_fp(x, y, z)
+
+    return x, y ,z, r_eyes_state, l_eyes_state,mouthState

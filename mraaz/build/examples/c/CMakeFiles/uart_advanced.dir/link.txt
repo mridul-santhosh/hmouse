@@ -1,0 +1,1 @@
+/usr/bin/cc  -Wall -Werror=main -Wformat -Wmain -Wuninitialized -Winit-self -Werror=implicit -Werror=missing-parameter-type -rdynamic CMakeFiles/uart_advanced.dir/uart_advanced.c.o -o uart_advanced  -Wl,-rpath,/home/radxa/projects/mraa/build/src ../../src/libmraa.so.2.2.0 -lpthread -ljson-c 

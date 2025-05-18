@@ -1,0 +1,34 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../api/mraa/common.h
+stdint.h
+-
+types.h
+../api/mraa/types.h
+
+../api/mraa/types.h
+
+../api/mraa/uart.h
+stdio.h
+-
+common.h
+../api/mraa/common.h
+
+/home/radxa/projects/mraa/examples/c/uart.c
+signal.h
+-
+stdio.h
+-
+stdlib.h
+-
+unistd.h
+-
+mraa/uart.h
+/home/radxa/projects/mraa/examples/c/mraa/uart.h
+

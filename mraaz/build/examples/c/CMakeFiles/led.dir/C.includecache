@@ -1,0 +1,32 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../api/mraa/common.h
+stdint.h
+-
+types.h
+../api/mraa/types.h
+
+../api/mraa/led.h
+common.h
+../api/mraa/common.h
+stdio.h
+-
+
+../api/mraa/types.h
+
+/home/radxa/projects/mraa/examples/c/led.c
+stdio.h
+-
+stdlib.h
+-
+unistd.h
+-
+mraa/led.h
+/home/radxa/projects/mraa/examples/c/mraa/led.h
+

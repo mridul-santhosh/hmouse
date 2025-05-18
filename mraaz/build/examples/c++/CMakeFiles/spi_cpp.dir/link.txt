@@ -1,0 +1,1 @@
+/usr/bin/c++  -Wall -Werror=main -Wformat -Wmain -Wuninitialized -Winit-self -Wnon-virtual-dtor -Woverloaded-virtual -Wreorder -rdynamic CMakeFiles/spi_cpp.dir/spi.cpp.o -o spi_cpp  -Wl,-rpath,/home/radxa/projects/mraa/build/src ../../src/libmraa.so.2.2.0 -lstdc++ -lpthread -ljson-c 

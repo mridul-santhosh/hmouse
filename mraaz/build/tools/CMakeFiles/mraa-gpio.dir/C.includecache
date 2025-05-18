@@ -1,0 +1,38 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../api/mraa/common.h
+stdint.h
+-
+types.h
+../api/mraa/types.h
+
+../api/mraa/gpio.h
+stdio.h
+-
+pthread.h
+-
+common.h
+../api/mraa/common.h
+jni.h
+-
+
+../api/mraa/types.h
+
+/home/radxa/projects/mraa/tools/mraa-gpio.c
+stdio.h
+-
+stdlib.h
+-
+string.h
+-
+unistd.h
+-
+mraa/gpio.h
+/home/radxa/projects/mraa/tools/mraa/gpio.h
+

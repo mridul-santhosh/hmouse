@@ -1,0 +1,1 @@
+/usr/bin/cc  -Wall -Werror=main -Wformat -Wmain -Wuninitialized -Winit-self -Werror=implicit -Werror=missing-parameter-type -rdynamic CMakeFiles/i2c_hmc5883l.dir/i2c_hmc5883l.c.o -o i2c_hmc5883l  -Wl,-rpath,/home/radxa/projects/mraa/build/src ../../src/libmraa.so.2.2.0 -lm -lpthread -ljson-c 
